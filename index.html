@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Álbum Legends - Ultra Fluido</title>
+    <style>
+        :root {
+            --bg-color: #1C1C1E;
+            --bg-secondary: #2C2C2E;
+            --ios-blue: #0A84FF;
+            --ios-green: #30D158;
+            --ios-red: #FF453A;
+            --text-main: #FFFFFF;
+            --text-muted: #8E8E93;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            
+            /* Rarezas */
+            --color-common: linear-gradient(135deg, #a1a1aa, #52525b);
+            --color-epic: linear-gradient(135deg, #a78bfa, #6d28d9);
+            --color-legendary: linear-gradient(135deg, #fef08a, #ca8a04);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: var(--font-family); background-color: var(--bg-color);
+            color: var(--text-main); padding-bottom: 90px; overflow-x: hidden;
+        }
+
+        /* Navbar Superior */
+        .navbar {
+            background-color: rgba(28, 28, 30, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            position: sticky; top: 0; z-index: 100; padding: 16px 20px;
+            border-bottom: 0.5px solid rgba(255,255,255,0.1);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .navbar h1 { font-size: 20px; font-weight: 700; color: #0A84FF; transition: color 0.3s; }
+        .nav-right { display: flex; align-items: center; gap: 15px; }
+        .economy-badge { background: #3A3A3C; padding: 6px 12px; border-radius: 20px; font-size: 15px; font-weight: 700; color: #FFD60A; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .admin-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted); transition: transform 0.2s; }
+        .admin-btn:active { transform: scale(0.8); }
+
+        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+
+        /* Vistas (Tabs) y Transiciones Fluidas */
+        .view { display: none; opacity: 0; transform: translateY(10px) scale(0.98); transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
+        .view.active { display: block; opacity: 1; transform: translateY(0) scale(1); }
+
+        /* HEADER DEL ÁLBUM */
+        .album-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 0 5px; }
+        .album-header h2 { font-size: 18px; color: var(--text-muted); }
+        .stats { font-size: 16px; font-weight: 700; color: var(--ios-blue); }
+
+        /* GRID ÁLBUM */
+        .album-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .sticker-slot {
+            background-color: var(--bg-secondary); border-radius: 14px; aspect-ratio: 1 / 1.1;
+            display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: 700; color: #48484A; border: 2px dashed #3A3A3C; position: relative;
+            transition: all 0.3s ease;
+        }
+        .sticker {
+            border: none; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 14px; overflow: hidden;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .sticker.common { background: var(--color-common); }
+        .sticker.epic { background: var(--color-epic); box-shadow: 0 0 10px rgba(109, 40, 217, 0.5); }
+        .sticker.legendary { background: var(--color-legendary); border: 2px solid #FFF; box-shadow: 0 0 20px rgba(253, 224, 71, 0.6); }
+        .sticker h3 { font-size: 11px; font-weight: 800; margin-bottom: 4px; text-transform: uppercase; color: #FFF; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); text-align: center; padding: 0 2px;}
+        .rarity-label { font-size: 8px; font-weight: bold; padding: 3px 6px; border-radius: 12px; background: rgba(0,0,0,0.5); color: white; text-transform: uppercase; }
+
+        /* TARJETAS */
+        .card { background: var(--bg-secondary); border-radius: 20px; padding: 25px; text-align: center; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform 0.3s ease; }
+        .card h3 { font-size: 22px; margin-bottom: 10px; }
+        .card p { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; line-height: 1.4; }
+        .card-icon { font-size: 50px; margin-bottom: 10px; display: block; animation: float 3s ease-in-out infinite; }
+        
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+        /* ZONA DE FOTOS */
+        .photo-preview { width: 100%; max-height: 250px; object-fit: cover; border-radius: 12px; margin-bottom: 15px; display: none; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
+        .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
+
+        /* Botones iOS Fluidos */
+        .btn-ios {
+            background: linear-gradient(135deg, #0A84FF, #0056b3); color: white; border: none; border-radius: 14px; padding: 16px 20px;
+            font-size: 17px; font-weight: 700; width: 100%; cursor: pointer; 
+            transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1); box-shadow: 0 4px 15px rgba(10, 132, 255, 0.3); margin-top: 10px;
+        }
+        .btn-ios:active { transform: scale(0.94); filter: brightness(0.9); box-shadow: 0 2px 8px rgba(10, 132, 255, 0.3); }
+        .btn-green { background: linear-gradient(135deg, var(--ios-green), #249940); box-shadow: 0 4px 15px rgba(48, 209, 88, 0.3); }
+        .btn-green:active { box-shadow: 0 2px 8px rgba(48, 209, 88, 0.3); }
+        .btn-red { background: linear-gradient(135deg, var(--ios-red), #c9342b); box-shadow: 0 4px 15px rgba(255, 69, 58, 0.3); }
+        .btn-gray { background: #3A3A3C; box-shadow: none; }
+        .btn-disabled { background: #48484A; box-shadow: none; cursor: not-allowed; color: #8E8E93; opacity: 0.7; }
+        .btn-disabled:active { transform: none; filter: none; }
+
+        /* TAB BAR INFERIOR */
+        .tab-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background-color: rgba(28, 28, 30, 0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-top: 0.5px solid rgba(255,255,255,0.1); display: flex; justify-content: space-around; padding: 10px 0 25px 0; z-index: 100;
+        }
+        .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-muted); background: none; border: none; font-size: 11px; font-weight: 500; cursor: pointer; width: 33%; transition: all 0.3s ease; }
+        .tab-item.active { color: var(--ios-blue); transform: translateY(-2px); }
+        .tab-icon { font-size: 24px; transition: transform 0.3s ease; }
+        .tab-item.active .tab-icon { transform: scale(1.1); }
+
+        /* MODAL FLUIDO */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; opacity: 0; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+        .modal { background: rgba(44, 44, 46, 0.95); width: 300px; border-radius: 20px; text-align: center; transform: scale(0.8) translateY(20px); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 20px 40px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); }
+        .modal-content { padding: 24px; }
+        .modal h2 { font-size: 20px; margin-bottom: 12px; color: white; letter-spacing: -0.5px; }
+        .modal p { font-size: 15px; color: #E5E5EA; line-height: 1.5; }
+        .modal-btn { width: 100%; padding: 16px; background: transparent; border: none; border-top: 1px solid rgba(255,255,255,0.1); color: var(--ios-blue); font-size: 17px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .modal-btn:active { background: rgba(255,255,255,0.05); border-radius: 0 0 20px 20px; }
+        .modal-input { width: 100%; padding: 12px; margin-top: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: #1C1C1E; color: white; font-size: 16px; text-align: center; transition: border 0.3s; }
+        .modal-input:focus { outline: none; border-color: var(--ios-blue); }
+
+        /* ANIMACIÓN DE ABRIR SOBRE MEJORADA */
+        #pack-animation-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 2000; display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+        }
+        
+        .pack-obj {
+            width: 150px; height: 210px; background: linear-gradient(135deg, #FF453A, #ca8a04);
+            border-radius: 16px; border: 4px solid #FFF; box-shadow: 0 0 40px rgba(255, 69, 58, 0.8);
+            display: flex; justify-content: center; align-items: center; font-size: 60px;
+            position: absolute; z-index: 2001; transition: all 0.3s ease;
+        }
+
+        .shake-pack { animation: smoothShake 1s infinite cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+        @keyframes smoothShake { 
+            0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+            20% { transform: translate(5px, 0) rotate(5deg) scale(1.05); }
+            40% { transform: translate(-5px, 0) rotate(-5deg) scale(1.05); }
+            60% { transform: translate(3px, 0) rotate(3deg) scale(1.05); }
+            80% { transform: translate(-3px, 0) rotate(-3deg) scale(1.05); }
+        }
+
+        .flash-white { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2005; opacity: 0; pointer-events: none; }
+        .do-flash { animation: flashAnim 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+        @keyframes flashAnim { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+        .revealed-cards-container { display: flex; gap: 15px; z-index: 2002; perspective: 1200px; }
+        .anim-card { width: 95px; height: 130px; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transform: translateY(150px) rotateY(180deg) scale(0.5); }
+        .anim-card h3 { font-size: 12px; font-weight: bold; color: white; margin-bottom: 5px; text-transform: uppercase; text-shadow: 1px 1px 3px #000; text-align: center;}
+        .anim-card .rarity-label { font-size: 9px; padding: 4px 8px; }
+        
+        .anim-card.show-card { animation: 3dFlipIn 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        
+        @keyframes 3dFlipIn { 
+            to { opacity: 1; transform: translateY(0) rotateY(0deg) scale(1); } 
+        }
+        
+        @keyframes popIn { 0% { transform: scale(0.5) translateY(20px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+        
+        .text-legendary { color: #fde047; font-weight: 800; text-shadow: 0 0 5px rgba(253,224,71,0.5); }
+        .text-epic { color: #a78bfa; font-weight: 700; }
+        .text-common { color: #a1a1aa; }
+    </style>
+</head>
+<body>
+
+    <!-- Barra Superior -->
+    <div class="navbar">
+        <h1>Álbum Legends</h1>
+        <div class="nav-right">
+            <div class="economy-badge">🪙 <span id="coin-display">0</span></div>
+            <button class="admin-btn" onclick="abrirModalAdmin()">🔒</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- VISTA 1: ÁLBUM -->
+        <div id="view-album" class="view active">
+            <div class="album-header">
+                <h2>Tu Colección</h2>
+                <div class="stats" id="progress-text">0/42</div>
+            </div>
+            <div class="album-grid" id="album-grid"></div>
+        </div>
+
+        <!-- VISTA 2: TIENDA Y RECOMPENSAS -->
+        <div id="view-store" class="view">
+            <!-- RECOMPENSA DE TIEMPO -->
+            <div class="card" style="border: 1px solid rgba(255, 214, 10, 0.3);">
+                <span class="card-icon">⏳</span>
+                <h3 style="color: #FFD60A;">Sueldo de Leyenda</h3>
+                <p>Reclama 150 monedas cada 10 minutos. ¡No te lo pierdas!</p>
+                <button id="claim-timer-btn" class="btn-ios btn-green" onclick="reclamarTiempo()">🎁 Reclamar 150 🪙</button>
+            </div>
+
+            <div class="card">
+                <span class="card-icon">🔥</span>
+                <h3>Sobre Hardcore</h3>
+                <p>Cuesta 150 monedas. Las repetidas te devuelven 5.</p>
+                <button class="btn-ios" onclick="comprarSobre()">Comprar (🪙 150)</button>
+            </div>
+        </div>
+
+        <!-- VISTA 3: MISIONES -->
+        <div id="view-missions" class="view">
+            <div class="card" id="mission-panel">
+                <span class="card-icon" id="mission-icon">🎯</span>
+                <h3 id="mission-title">Misión Extra</h3>
+                <p id="mission-desc">Sube una foto ayudando en casa para ganar un SOBRE GRATIS y 50 monedas extra.</p>
+                
+                <img id="brother-photo-preview" class="photo-preview">
+                
+                <div id="mission-upload-zone">
+                    <div class="file-upload-wrapper">
+                        <button class="btn-ios">📸 Tomar/Subir Foto</button>
+                        <input type="file" accept="image/*" onchange="cargarFotoMision(event)">
+                    </div>
+                </div>
+
+                <button id="mission-waiting-btn" class="btn-ios btn-disabled" style="display:none;" disabled>⏳ Esperando al Jefe...</button>
+                <button id="mission-claim-btn" class="btn-ios btn-green" style="display:none;" onclick="reclamarRecompensaMision()">🎁 Reclamar Sobre + 50 🪙</button>
+            </div>
+        </div>
+
+        <!-- VISTA 4: ADMIN SECRETO -->
+        <div id="view-admin" class="view">
+            <div class="card">
+                <span class="card-icon">👑</span>
+                <h3>Panel del Jefe</h3>
+                <div id="admin-review-zone">
+                    <img id="admin-photo-preview" class="photo-preview" style="display:none;">
+                    <p id="admin-status-text" style="color:var(--ios-blue); font-weight:bold; margin-bottom:15px;">No hay misiones por revisar.</p>
+                    <button class="btn-ios btn-green" id="btn-accept" style="display:none;" onclick="juzgarMision('aceptada')">✅ Aprobar (+Sobre y 50🪙)</button>
+                    <button class="btn-ios btn-red" id="btn-reject" style="display:none;" onclick="juzgarMision('rechazada')">❌ Rechazar</button>
+                </div>
+                <button class="btn-ios btn-gray" style="margin-top: 30px;" onclick="cerrarAdmin()">Salir del Panel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB BAR INFERIOR -->
+    <div class="tab-bar">
+        <button class="tab-item active" id="tab-album" onclick="cambiarVista('album')"><span class="tab-icon">📖</span> Álbum</button>
+        <button class="tab-item" id="tab-store" onclick="cambiarVista('store')"><span class="tab-icon">🛒</span> Tienda</button>
+        <button class="tab-item" id="tab-missions" onclick="cambiarVista('missions')"><span class="tab-icon">🎯</span> Misiones</button>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal" id="modal-box">
+            <div class="modal-content">
+                <h2 id="modal-title">Mensaje</h2>
+                <div id="modal-text"></div>
+                <input type="password" id="modal-password" class="modal-input" style="display:none;" placeholder="Contraseña">
+            </div>
+            <button class="modal-btn" id="modal-btn-ok" onclick="cerrarModal()">Aceptar</button>
+        </div>
+    </div>
+
+    <!-- PANTALLA DE ANIMACIÓN DE SOBRE -->
+    <div id="pack-animation-screen">
+        <div class="flash-white" id="flash-effect"></div>
+        <div class="pack-obj" id="anim-pack">🌟</div>
+        <div class="revealed-cards-container" id="anim-cards-container"></div>
+    </div>
+
+    <script>
+        // --- BASE DE DATOS MASIVA (42 CARTAS) ---
+        const jugadores = [
+            { id: 1, nombre: 'Messi', rareza: 'legendary' }, { id: 2, nombre: 'Ronaldo', rareza: 'legendary' }, { id: 3, nombre: 'Pele', rareza: 'legendary' }, { id: 4, nombre: 'Maradona', rareza: 'legendary' }, { id: 5, nombre: 'Zidane', rareza: 'legendary' }, { id: 6, nombre: 'Cruyff', rareza: 'legendary' },
+            { id: 7, nombre: 'Mbappé', rareza: 'epic' }, { id: 8, nombre: 'Neymar', rareza: 'epic' }, { id: 9, nombre: 'Modric', rareza: 'epic' }, { id: 10, nombre: 'De Bruyne', rareza: 'epic' }, { id: 11, nombre: 'Vinícius', rareza: 'epic' }, { id: 12, nombre: 'Haaland', rareza: 'epic' }, { id: 13, nombre: 'Bellingham', rareza: 'epic' }, { id: 14, nombre: 'Yamal', rareza: 'epic' }, { id: 15, nombre: 'Foden', rareza: 'epic' }, { id: 16, nombre: 'Wirtz', rareza: 'epic' }, { id: 17, nombre: 'Musiala', rareza: 'epic' }, { id: 18, nombre: 'Rodri', rareza: 'epic' },
+            { id: 19, nombre: 'Pedri', rareza: 'common' }, { id: 20, nombre: 'Gavi', rareza: 'common' }, { id: 21, nombre: 'Valverde', rareza: 'common' }, { id: 22, nombre: 'Alisson', rareza: 'common' }, { id: 23, nombre: 'Kane', rareza: 'common' }, { id: 24, nombre: 'Enzo', rareza: 'common' }, { id: 25, nombre: 'Araujo', rareza: 'common' }, { id: 26, nombre: 'Saka', rareza: 'common' }, { id: 27, nombre: 'Saliba', rareza: 'common' }, { id: 28, nombre: 'Rudiger', rareza: 'common' }, { id: 29, nombre: 'Griezmann', rareza: 'common' }, { id: 30, nombre: 'Leao', rareza: 'common' }, { id: 31, nombre: 'Odegaard', rareza: 'common' }, { id: 32, nombre: 'Dias', rareza: 'common' }, { id: 33, nombre: 'Courtois', rareza: 'common' }, { id: 34, nombre: 'Ter Stegen', rareza: 'common' }, { id: 35, nombre: 'Bruno F.', rareza: 'common' }, { id: 36, nombre: 'Barella', rareza: 'common' }, { id: 37, nombre: 'Davies', rareza: 'common' }, { id: 38, nombre: 'Hakimi', rareza: 'common' }, { id: 39, nombre: 'Martinez', rareza: 'common' }, { id: 40, nombre: 'Kimmich', rareza: 'common' }, { id: 41, nombre: 'Bastoni', rareza: 'common' }, { id: 42, nombre: 'Militao', rareza: 'common' }
+        ];
+
+        // NUEVO KEY: albumDataV3 para aplicar la nueva regla de recompensa combo
+        let datos = JSON.parse(localStorage.getItem('albumDataV3')) || { monedas: 0, inventario: [], estadoMision: 'ninguna', fotoMision: null, ultimoReclamo: 0 };
+        let inventario = new Set(datos.inventario);
+
+        function guardarDatos() {
+            datos.inventario = Array.from(inventario); localStorage.setItem('albumDataV3', JSON.stringify(datos));
+        }
+
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function playSound(type) {
+            if (!audioCtx) audioCtx = new AudioContext();
+            const osc = audioCtx.createOscillator(); const gainNode = audioCtx.createGain();
+            osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+            
+            if (type === 'shake') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(80, audioCtx.currentTime); gainNode.gain.setValueAtTime(0.03, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); } 
+            else if (type === 'flash') { osc.type = 'square'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.6); gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6); osc.start(); osc.stop(audioCtx.currentTime + 0.6); } 
+            else if (type === 'pop') { osc.type = 'sine'; osc.frequency.setValueAtTime(500, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); } 
+            else if (type === 'legendary') { osc.type = 'triangle'; osc.frequency.setValueAtTime(440, audioCtx.currentTime); osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.3); osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.6); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1.5); osc.start(); osc.stop(audioCtx.currentTime + 1.5); }
+            else if (type === 'coin') { osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime); osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3); }
+        }
+
+        // --- SISTEMA DE TIEMPO ---
+        function actualizarTemporizador() {
+            const btn = document.getElementById('claim-timer-btn');
+            const cooldown = 10 * 60 * 1000; // 10 Minutos en milisegundos
+            const tiempoPasado = Date.now() - datos.ultimoReclamo;
+
+            if (tiempoPasado >= cooldown) {
+                btn.innerText = "🎁 Reclamar 150 🪙";
+                btn.className = "btn-ios btn-green";
+                btn.disabled = false;
+            } else {
+                const restante = cooldown - tiempoPasado;
+                const min = Math.floor(restante / 60000);
+                const seg = Math.floor((restante % 60000) / 1000);
+                btn.innerText = `⏳ Espera ${min}:${seg < 10 ? '0' : ''}${seg}`;
+                btn.className = "btn-ios btn-disabled";
+                btn.disabled = true;
+            }
+        }
+        setInterval(actualizarTemporizador, 1000);
+
+        function reclamarTiempo() {
+            datos.ultimoReclamo = Date.now();
+            datos.monedas += 150;
+            guardarDatos();
+            actualizarUI();
+            actualizarTemporizador();
+            playSound('coin');
+            mostrarModal("¡Sueldo Cobrado!", "Has recibido 150 🪙. Vuelve en 10 minutos para más.");
+        }
+
+        // --- NAVEGACIÓN FLUIDA ---
+        function cambiarVista(vista) {
+            document.querySelectorAll('.view').forEach(v => {
+                v.style.opacity = '0'; v.style.transform = 'translateY(10px) scale(0.98)';
+                setTimeout(() => v.classList.remove('active'), 300);
+            });
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+            
+            setTimeout(() => {
+                const target = document.getElementById(`view-${vista}`);
+                target.classList.add('active');
+                requestAnimationFrame(() => {
+                    target.style.opacity = '1'; target.style.transform = 'translateY(0) scale(1)';
+                });
+                if(vista !== 'admin') document.getElementById(`tab-${vista}`).classList.add('active');
+                if(vista === 'missions') actualizarUIMisiones();
+                if(vista === 'admin') actualizarUIAdmin();
+            }, 300);
+        }
+
+        // --- MISIONES (COMBO SOBRE + MONEDAS) ---
+        function actualizarUIMisiones() {
+            const upZone = document.getElementById('mission-upload-zone'); const waitBtn = document.getElementById('mission-waiting-btn'); const claimBtn = document.getElementById('mission-claim-btn'); const desc = document.getElementById('mission-desc'); const preview = document.getElementById('brother-photo-preview');
+            upZone.style.display = 'none'; waitBtn.style.display = 'none'; claimBtn.style.display = 'none'; preview.style.display = 'none';
+            
+            if (datos.estadoMision === 'ninguna') { desc.innerHTML = "Sube una foto ayudando en casa para ganar un <b style='color:var(--ios-green)'>SOBRE GRATIS</b> y <b>50 monedas extra</b>."; upZone.style.display = 'block'; } 
+            else if (datos.estadoMision === 'pendiente') { desc.innerText = "Foto enviada. Esperando a que el Jefe la revise."; preview.src = datos.fotoMision; preview.style.display = 'block'; waitBtn.style.display = 'block'; } 
+            else if (datos.estadoMision === 'aceptada') { desc.innerText = "¡Misión Aprobada! Cobra tu premio épico."; claimBtn.style.display = 'block'; } 
+            else if (datos.estadoMision === 'rechazada') { desc.innerText = "Misión Rechazada. Intenta de nuevo con algo útil."; upZone.style.display = 'block'; }
+        }
+
+        function cargarFotoMision(event) {
+            const archivo = event.target.files[0]; if (!archivo) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                datos.fotoMision = e.target.result; datos.estadoMision = 'pendiente'; guardarDatos(); actualizarUIMisiones();
+                mostrarModal("¡Foto Enviada!", "Dile a tu hermano que revise el panel de Admin.");
+            }; reader.readAsDataURL(archivo);
+        }
+
+        function reclamarRecompensaMision() {
+            datos.estadoMision = 'ninguna'; datos.fotoMision = null; 
+            datos.monedas += 50; // Recompensa en monedas
+            guardarDatos(); actualizarUI(); actualizarUIMisiones();
+            playSound('coin');
+            
+            // Le damos las monedas, y tras medio segundo, abrimos el sobre gratis
+            setTimeout(() => {
+                iniciarAnimacionSobre(true); // true = es un sobre de misión
+            }, 500);
+        }
+
+        function abrirModalAdmin() {
+            document.getElementById('modal-title').innerText = "Acceso de Jefe"; document.getElementById('modal-text').innerHTML = "Ingresa la contraseña (admin):"; document.getElementById('modal-password').style.display = 'block'; document.getElementById('modal-password').value = '';
+            document.getElementById('modal-btn-ok').onclick = function() {
+                if (document.getElementById('modal-password').value === 'admin') { cerrarModal(); cambiarVista('admin'); } 
+                else { document.getElementById('modal-text').innerHTML = "❌ Contraseña incorrecta."; }
+            };
+            mostrarVisibilidadModal();
+        }
+
+        function cerrarAdmin() { cambiarVista('album'); }
+        function actualizarUIAdmin() {
+            const preview = document.getElementById('admin-photo-preview'); const statusText = document.getElementById('admin-status-text'); const btnA = document.getElementById('btn-accept'); const btnR = document.getElementById('btn-reject');
+            if (datos.estadoMision === 'pendiente') { preview.src = datos.fotoMision; preview.style.display = 'block'; statusText.innerText = "¿Aceptas darle un Sobre y 50 monedas por esto?"; btnA.style.display = 'block'; btnR.style.display = 'block'; } 
+            else { preview.style.display = 'none'; statusText.innerText = "No hay misiones por revisar."; btnA.style.display = 'none'; btnR.style.display = 'none'; }
+        }
+
+        function juzgarMision(veredicto) {
+            datos.estadoMision = veredicto; if(veredicto === 'rechazada') datos.fotoMision = null;
+            guardarDatos(); actualizarUIAdmin();
+            mostrarModal("Decisión Tomada", veredicto === 'aceptada' ? "Le acabas de dar el combo (Sobre + 50🪙)." : "Rechazado sin piedad xd.");
+        }
+
+        // --- SISTEMA ÁLBUM, UI Y ANIMACIÓN ---
+        function actualizarUI() { 
+            document.getElementById('coin-display').innerText = datos.monedas; 
+            document.getElementById('progress-text').innerText = `${inventario.size}/${jugadores.length}`; 
+        }
+
+        function comprarSobre() {
+            if (datos.monedas < 150) return mostrarModal("Eres Pobre", "No te alcanzan las 150 monedas. Espera el sueldo o haz misiones.");
+            datos.monedas -= 150; guardarDatos(); actualizarUI();
+            iniciarAnimacionSobre(false);
+        }
+
+        function iniciarAnimacionSobre(esMision = false) {
+            let cartasObtenidas = [];
+            for (let i = 0; i < 3; i++) {
+                const prob = Math.random() * 100;
+                let rareza = prob > 95 ? 'legendary' : prob > 70 ? 'epic' : 'common';
+                const posibles = jugadores.filter(j => j.rareza === rareza);
+                cartasObtenidas.push(posibles[Math.floor(Math.random() * posibles.length)]);
+            }
+
+            const animScreen = document.getElementById('pack-animation-screen'); const packObj = document.getElementById('anim-pack'); const flash = document.getElementById('flash-effect'); const cardsContainer = document.getElementById('anim-cards-container');
+            cardsContainer.innerHTML = ''; packObj.style.display = 'flex'; flash.classList.remove('do-flash'); animScreen.style.display = 'flex';
+            
+            packObj.classList.add('shake-pack'); let shakeInterval = setInterval(() => playSound('shake'), 250);
+
+            setTimeout(() => {
+                clearInterval(shakeInterval); packObj.classList.remove('shake-pack'); packObj.style.display = 'none';
+                flash.classList.add('do-flash'); playSound('flash');
+
+                cartasObtenidas.forEach((carta, index) => {
+                    let cardHTML = document.createElement('div'); cardHTML.className = `anim-card sticker ${carta.rareza}`;
+                    cardHTML.innerHTML = `<h3>${carta.nombre}</h3><div class="rarity-label">${carta.rareza}</div>`;
+                    cardsContainer.appendChild(cardHTML);
+                    
+                    setTimeout(() => {
+                        cardHTML.classList.add('show-card');
+                        if (carta.rareza === 'legendary') playSound('legendary'); else playSound('pop');
+                    }, 500 + (index * 700));
+                });
+
+                setTimeout(() => { animScreen.style.display = 'none'; procesarCartas(cartasObtenidas, esMision); }, 500 + (3 * 700) + 1200);
+            }, 1500);
+        }
+
+        function procesarCartas(cartasObtenidas, esMision) {
+            let mensaje = esMision ? "<span style='color:var(--ios-green); font-weight:bold;'>¡Recibiste +50 🪙 extra por la misión!</span><br><br>" : "";
+            cartasObtenidas.forEach(carta => {
+                let clase = carta.rareza === 'legendary' ? 'text-legendary' : carta.rareza === 'epic' ? 'text-epic' : 'text-common';
+                if (inventario.has(carta.id)) {
+                    datos.monedas += 5; 
+                    mensaje += `• <span class="${clase}">${carta.nombre}</span> (Repetida +🪙5)<br>`;
+                } else {
+                    inventario.add(carta.id); renderizarCarta(carta);
+                    mensaje += `• <strong class="${clase}">${carta.nombre}</strong> (¡Nueva!)<br>`;
+                }
+            });
+            guardarDatos(); actualizarUI();
+            mostrarModal(esMision ? "¡Recompensa Épica!" : "Resumen del Sobre", mensaje);
+        }
+
+        function inicializarAlbum() {
+            const grid = document.getElementById('album-grid'); let htmlHTML = "";
+            jugadores.forEach(j => { htmlHTML += `<div class="sticker-slot" id="slot-${j.id}">${j.id}</div>`; });
+            grid.innerHTML = htmlHTML;
+            inventario.forEach(id => { const carta = jugadores.find(j => j.id === id); if(carta) renderizarCarta(carta); });
+            actualizarUI(); actualizarTemporizador();
+        }
+
+        function renderizarCarta(carta) {
+            const slot = document.getElementById(`slot-${carta.id}`); if(!slot) return;
+            slot.innerHTML = `<div class="sticker ${carta.rareza}"><h3>${carta.nombre}</h3><div class="rarity-label">${carta.rareza}</div></div>`;
+        }
+
+        // --- MODAL FLUIDO ---
+        const modal = document.getElementById('modal');
+        function mostrarModal(titulo, texto) {
+            document.getElementById('modal-password').style.display = 'none'; document.getElementById('modal-title').innerText = titulo; document.getElementById('modal-text').innerHTML = texto;
+            document.getElementById('modal-btn-ok').onclick = cerrarModal;
+            mostrarVisibilidadModal();
+        }
+        
+        function mostrarVisibilidadModal() {
+            modal.style.display = 'flex'; 
+            requestAnimationFrame(() => { 
+                modal.style.opacity = '1'; 
+                document.getElementById('modal-box').style.transform = 'scale(1) translateY(0)'; 
+            });
+        }
+        
+        function cerrarModal() { 
+            modal.style.opacity = '0'; 
+            document.getElementById('modal-box').style.transform = 'scale(0.8) translateY(20px)'; 
+            setTimeout(() => modal.style.display = 'none', 300); 
+        }
+
+        inicializarAlbum();
+    </script>
+</body>
+</html>
