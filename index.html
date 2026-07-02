@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Álbum Legends - iOS Edition 🍏</title>
+    <style>
+        :root {
+            /* Colores Nativos iOS Dark Mode */
+            --bg-color: #000000;
+            --bg-secondary: #1C1C1E;
+            --bg-tertiary: #2C2C2E;
+            --ios-blue: #0A84FF; --ios-green: #30D158; --ios-red: #FF453A; --ios-gold: #FFD60A;
+            --text-main: #FFFFFF; --text-muted: #8E8E93;
+            --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            
+            /* Rarezas */
+            --color-common: linear-gradient(135deg, rgba(142,142,147,0.9), rgba(99,99,102,1));
+            --color-epic: linear-gradient(135deg, rgba(191,90,242,0.9), rgba(94,92,230,1));
+            --color-legendary: linear-gradient(135deg, rgba(255,214,10,0.9), rgba(255,159,10,1));
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            font-family: var(--font-family); color: var(--text-main); overflow-x: hidden; 
+            background-color: var(--bg-color);
+            padding-bottom: 90px;
+        }
+
+        /* NAVBAR iOS */
+        .navbar { background-color: rgba(28, 28, 30, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 100; padding: 16px 20px; border-bottom: 0.5px solid rgba(84,84,88,0.65); display: flex; justify-content: space-between; align-items: center; transform: translateZ(0); }
+        .navbar h1 { font-size: 22px; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; }
+        .nav-right { display: flex; align-items: center; gap: 12px; }
+        .economy-badge { background: var(--bg-tertiary); padding: 5px 10px; border-radius: 8px; font-size: 15px; font-weight: 600; color: var(--ios-gold); display: flex; align-items: center; gap: 5px; }
+        .icon-btn { background: transparent; border: none; font-size: 22px; cursor: pointer; color: var(--ios-blue); transition: opacity 0.2s; }
+        .icon-btn:active { opacity: 0.5; }
+
+        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+
+        /* AUTH SCREEN iOS */
+        #auth-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; padding: 20px; background: var(--bg-color); z-index: 9999; position: fixed; top:0; left:0; width: 100%; transition: opacity 0.3s ease; }
+        .auth-card { width: 100%; max-width: 400px; text-align: center; }
+        .auth-card h2 { margin-bottom: 10px; font-size: 32px; font-weight: 700; letter-spacing: -1px; }
+        .auth-input { width: 100%; padding: 16px; margin-bottom: 15px; border-radius: 12px; border: none; background: var(--bg-secondary); color: white; font-size: 17px; }
+        .auth-input:focus { outline: 2px solid var(--ios-blue); }
+
+        /* VIEWS */
+        .view { display: none; opacity: 0; transform: scale(0.98); transition: opacity 0.25s, transform 0.25s; will-change: opacity, transform; }
+        .view.active { display: block; opacity: 1; transform: scale(1); }
+
+        /* CARDS & BUTTONS iOS */
+        .card { background: var(--bg-secondary); border-radius: 18px; padding: 25px; text-align: center; margin-bottom: 20px; }
+        .card-icon { font-size: 45px; margin-bottom: 12px; display: block; }
+        .btn-ios { background: var(--ios-blue); color: white; border: none; border-radius: 14px; padding: 16px 20px; font-size: 17px; font-weight: 600; width: 100%; cursor: pointer; transition: background 0.2s, transform 0.1s; margin-top: 10px; }
+        .btn-ios:active { background: #0056b3; transform: scale(0.97); }
+        .btn-green { background: var(--ios-green); color: #000; } .btn-green:active { background: #249940; }
+        .btn-red { background: var(--ios-red); } .btn-red:active { background: #c9342b; }
+        .btn-gray { background: var(--bg-tertiary); color: var(--ios-blue); }
+        .btn-disabled { background: var(--bg-tertiary); color: var(--text-muted); pointer-events: none; }
+
+        /* ALBUM GRID */
+        .album-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 15px; }
+        .album-header h2 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px;}
+        .stats { font-size: 17px; color: var(--text-muted); }
+        .album-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .sticker-slot { background-color: var(--bg-secondary); border-radius: 8px; aspect-ratio: 1 / 1.25; display: flex; justify-content: center; align-items: center; font-size: 20px; font-weight: 600; color: #48484A; position: relative; overflow: hidden; transform: translateZ(0); }
+        
+        .sticker { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background-size: cover; background-position: center; animation: popIn 0.3s ease-out forwards; will-change: transform; }
+        .sticker-overlay { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 1; mix-blend-mode: multiply; }
+        .sticker.common .sticker-overlay { background: var(--color-common); } 
+        .sticker.epic .sticker-overlay { background: var(--color-epic); } 
+        .sticker.legendary .sticker-overlay { background: var(--color-legendary); }
+        .sticker.legendary { border: 2px solid #FFF; }
+        
+        .sticker h3 { font-size: 12px; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; color: #FFF; text-shadow: 1px 1px 2px #000; text-align: center; z-index: 2; padding: 0 4px; letter-spacing: -0.3px;}
+        .rarity-label { font-size: 9px; font-weight: 700; padding: 3px 6px; border-radius: 6px; background: rgba(0,0,0,0.6); color: white; text-transform: uppercase; z-index: 2; }
+
+        /* FOTOS */
+        .photo-preview { width: 100%; max-height: 250px; object-fit: cover; border-radius: 12px; margin-bottom: 15px; display: none; }
+        .file-upload-wrapper { position: relative; overflow: hidden; width: 100%; }
+        .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; }
+
+        /* RANKING */
+        .rank-list { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        .rank-item { background: var(--bg-tertiary); padding: 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .rank-info { display: flex; align-items: center; gap: 12px; }
+        .rank-pos { font-size: 17px; font-weight: 700; width: 25px; text-align: center; }
+        .rank-name { font-weight: 600; font-size: 16px; }
+        .rank-score { color: var(--text-muted); font-weight: 500; font-size: 15px;}
+        .rank-1 .rank-pos { color: #FFD700; font-size: 22px;}
+        .rank-2 .rank-pos { color: #C0C0C0; font-size: 20px;}
+        .rank-3 .rank-pos { color: #CD7F32; font-size: 18px;}
+
+        /* PERFIL */
+        .profile-avatar { width: 80px; height: 80px; background: var(--bg-tertiary); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; margin: 0 auto 15px auto; color: var(--ios-blue); font-weight: 600;}
+        .profile-stat { border-bottom: 0.5px solid rgba(84,84,88,0.65); padding: 16px 0; display: flex; justify-content: space-between; font-size: 17px;}
+        .profile-stat:last-child { border-bottom: none; }
+
+        /* TAB BAR iOS */
+        .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(28, 28, 30, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid rgba(84,84,88,0.65); display: flex; justify-content: space-around; padding: 12px 0 25px 0; z-index: 100; transform: translateZ(0); }
+        .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-muted); background: none; border: none; font-size: 10px; font-weight: 600; cursor: pointer; width: 25%; transition: color 0.2s; }
+        .tab-item.active { color: var(--ios-blue); }
+        .tab-icon { font-size: 22px; }
+
+        /* MODAL iOS ALERT STYLE */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: none; justify-content: center; align-items: center; z-index: 1000; opacity: 0; transition: opacity 0.2s; }
+        .modal { background: rgba(30, 30, 30, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); width: 270px; border-radius: 14px; text-align: center; transform: scale(1.1); transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .modal h2 { font-size: 17px; font-weight: 600; margin: 20px 0 5px; color: white; letter-spacing: -0.5px;}
+        .modal p { font-size: 13px; color: #EBEBF5; margin: 0 15px 15px; line-height: 1.3; }
+        .modal-btn { width: 100%; padding: 12px; background: transparent; border: none; border-top: 0.5px solid rgba(84,84,88,0.65); color: var(--ios-blue); font-size: 17px; font-weight: 600; cursor: pointer; }
+        .modal-btn:active { background: rgba(255,255,255,0.1); border-bottom-left-radius: 14px; border-bottom-right-radius: 14px;}
+        .modal-input { width: calc(100% - 30px); padding: 8px; margin: 0 15px 15px; border-radius: 6px; border: 0.5px solid rgba(84,84,88,0.65); background: rgba(0,0,0,0.2); color: white; text-align: center; font-size: 13px; }
+
+        /* ANIMACIÓN DE SOBRES ARREGLADA */
+        #pack-animation-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .pack-obj { width: 130px; height: 190px; background: linear-gradient(135deg, #FF453A, #ca8a04); border-radius: 12px; border: 3px solid #FFF; display: flex; justify-content: center; align-items: center; font-size: 50px; position: absolute; z-index: 2001; will-change: transform; }
+        .shake-pack { animation: fastShake 0.4s infinite alternate ease-in-out; }
+        @keyframes fastShake { 0% { transform: rotate(-5deg); } 100% { transform: rotate(5deg); } }
+        
+        .flash-white { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2005; opacity: 0; pointer-events: none; will-change: opacity; }
+        .do-flash { animation: flashAnim 0.5s ease-out forwards; }
+        @keyframes flashAnim { 0% { opacity: 1; } 100% { opacity: 0; } }
+        
+        /* Contenedor de cartas arreglado */
+        .revealed-cards-container { display: flex; gap: 10px; z-index: 2002; justify-content: center; align-items: center; width: 100%; padding: 0 10px;}
+        
+        /* Clase específica para las cartas en la animación */
+        .anim-card { width: 90px; height: 125px; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transform: translateY(30px) scale(0.9); transition: all 0.4s ease-out; background-size: cover; background-position: center; border: 1px solid rgba(255,255,255,0.3); position: relative; overflow: hidden;}
+        .anim-card.show-card { opacity: 1; transform: translateY(0) scale(1); }
+        .anim-overlay { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 1; mix-blend-mode: multiply; }
+        .rare-common .anim-overlay { background: var(--color-common); }
+        .rare-epic .anim-overlay { background: var(--color-epic); }
+        .rare-legendary .anim-overlay { background: var(--color-legendary); }
+        .rare-legendary { border: 2px solid #FFF; }
+        .anim-card h3 { font-size: 11px; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; color: #FFF; text-shadow: 1px 1px 2px #000; text-align: center; z-index: 2; padding: 0 2px;}
+        .anim-card .rarity-label { font-size: 8px; font-weight: 700; padding: 3px 6px; border-radius: 4px; background: rgba(0,0,0,0.8); color: white; text-transform: uppercase; z-index: 2; }
+        
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <!-- REPRODUCTOR -->
+    <audio id="bgMusic" loop>
+        <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8b8f75727.mp3?filename=epic-action-113888.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- AUTH -->
+    <div id="auth-screen">
+        <div class="auth-card">
+            <h2>Legends</h2>
+            <p style="margin-bottom: 25px; color: var(--text-muted); font-size: 15px;">Inicia sesión para continuar.</p>
+            <input type="email" id="auth-email" class="auth-input" placeholder="Correo electrónico">
+            <input type="password" id="auth-pass" class="auth-input" placeholder="Contraseña">
+            <button class="btn-ios" onclick="window.iniciarSesion()">Iniciar Sesión</button>
+            <button class="btn-ios btn-gray" onclick="window.registrarCuenta()">Crear Cuenta</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="app-container" style="display: none;">
+        <div class="navbar">
+            <h1>Legends</h1>
+            <div class="nav-right">
+                <div class="economy-badge">🪙 <span id="coin-display">0</span></div>
+                <button class="icon-btn" id="music-btn" onclick="window.toggleMusic()">🎵</button>
+                <button class="icon-btn" onclick="window.abrirModalAdmin()">🔒</button>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- VISTA 1: ÁLBUM -->
+            <div id="view-album" class="view active">
+                <div class="album-header">
+                    <h2>Colección</h2>
+                    <div class="stats" id="progress-text">0/42</div>
+                </div>
+                <div class="album-grid" id="album-grid"></div>
+            </div>
+
+            <!-- VISTA 2: TIENDA -->
+            <div id="view-store" class="view">
+                <div class="card">
+                    <span class="card-icon">⏳</span>
+                    <h3 style="color: var(--text-main);">Sueldo Fijo</h3>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">150 monedas cada 10 mins.</p>
+                    <button id="claim-timer-btn" class="btn-ios btn-green" onclick="window.reclamarTiempo()">🎁 Reclamar 150 🪙</button>
+                </div>
+                <div class="card">
+                    <span class="card-icon">🔥</span>
+                    <h3>Sobre Especial</h3>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">Cuesta 150 monedas.</p>
+                    <button class="btn-ios" onclick="window.comprarSobre()">Comprar Sobre</button>
+                </div>
+            </div>
+
+            <!-- VISTA 3: MISIONES -->
+            <div id="view-missions" class="view">
+                <div class="card">
+                    <span class="card-icon">🎯</span>
+                    <h3 id="mission-title">Cargando...</h3>
+                    <p id="mission-desc" style="color: var(--text-muted); font-size: 14px; margin-bottom: 10px;">...</p>
+                    <p style="color: var(--ios-green); font-weight: 600; margin-bottom: 15px;">Premio: Sobre + 50 🪙</p>
+                    <img id="brother-photo-preview" class="photo-preview">
+                    
+                    <div id="mission-upload-zone">
+                        <div class="file-upload-wrapper">
+                            <button class="btn-ios">📸 Subir Prueba</button>
+                            <input type="file" accept="image/*" capture="environment" onchange="window.cargarFotoMision(event)">
+                        </div>
+                    </div>
+
+                    <button id="mission-waiting-btn" class="btn-ios btn-disabled" style="display:none;" disabled>⏳ En revisión...</button>
+                    <button id="mission-claim-btn" class="btn-ios btn-green" style="display:none;" onclick="window.reclamarRecompensaMision()">🎁 Reclamar Premio</button>
+                </div>
+            </div>
+
+            <!-- VISTA 4: RANKING -->
+            <div id="view-ranking" class="view">
+                <div class="card" style="padding-bottom: 10px;">
+                    <span class="card-icon">🌍</span>
+                    <h3>Top Global</h3>
+                    <button class="btn-ios btn-gray" style="padding: 10px;" onclick="window.cargarRanking()">🔄 Actualizar</button>
+                </div>
+                <div class="rank-list" id="ranking-container"></div>
+            </div>
+
+            <!-- VISTA 5: PERFIL -->
+            <div id="view-profile" class="view">
+                <div class="card" style="padding: 30px 20px;">
+                    <div class="profile-avatar" id="profile-initial">?</div>
+                    <h3 id="profile-name" style="font-size: 24px; margin-bottom: 5px;">Cargando...</h3>
+                    <p style="margin-bottom: 25px; color: var(--text-muted); font-size: 15px;" id="profile-email">correo@correo.com</p>
+                    
+                    <div class="profile-stat"><span>Billetera</span><strong id="stat-coins">0 🪙</strong></div>
+                    <div class="profile-stat"><span>Progreso</span><strong id="stat-cards">0/42</strong></div>
+                    
+                    <button class="btn-ios btn-red" style="margin-top: 25px;" onclick="window.cerrarSesionApp()">Cerrar Sesión</button>
+                </div>
+            </div>
+
+            <!-- VISTA: ADMIN -->
+            <div id="view-admin" class="view">
+                <div class="card">
+                    <span class="card-icon">👑</span>
+                    <h3>Modo Administrador</h3>
+                    <div id="admin-review-zone">
+                        <img id="admin-photo-preview" class="photo-preview" style="display:none;">
+                        <p id="admin-status-text" style="color:var(--text-muted); margin-bottom:15px;">Sin pendientes.</p>
+                        <button class="btn-ios btn-green" id="btn-accept" style="display:none;" onclick="window.juzgarMision('aceptada')">✅ Aprobar Misión</button>
+                        <button class="btn-ios btn-red" id="btn-reject" style="display:none;" onclick="window.juzgarMision('rechazada')">❌ Rechazar Misión</button>
+                    </div>
+                    <button class="btn-ios btn-gray" style="margin-top: 20px;" onclick="window.cambiarVista('album')">Cerrar Panel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB BAR -->
+        <div class="tab-bar">
+            <button class="tab-item active" id="tab-album" onclick="window.cambiarVista('album')"><span class="tab-icon">📖</span> Álbum</button>
+            <button class="tab-item" id="tab-store" onclick="window.cambiarVista('store')"><span class="tab-icon">🛒</span> Tienda</button>
+            <button class="tab-item" id="tab-missions" onclick="window.cambiarVista('missions')"><span class="tab-icon">🎯</span> Misiones</button>
+            <button class="tab-item" id="tab-ranking" onclick="window.cambiarVista('ranking'); window.cargarRanking();"><span class="tab-icon">🏆</span> Top</button>
+            <button class="tab-item" id="tab-profile" onclick="window.cambiarVista('profile')"><span class="tab-icon">👤</span> Perfil</button>
+        </div>
+    </div>
+
+    <!-- MODAL iOS -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal" id="modal-box">
+            <div class="modal-content">
+                <h2 id="modal-title">Mensaje</h2>
+                <div id="modal-text"></div>
+                <input type="password" id="modal-password" class="modal-input" style="display:none;" placeholder="Contraseña">
+            </div>
+            <button class="modal-btn" id="modal-btn-ok" onclick="window.cerrarModal()">OK</button>
+        </div>
+    </div>
+
+    <!-- ANIMACIÓN -->
+    <div id="pack-animation-screen">
+        <div class="flash-white" id="flash-effect"></div>
+        <div class="pack-obj" id="anim-pack">🌟</div>
+        <div class="revealed-cards-container" id="anim-cards-container"></div>
+    </div>
+
+    <!-- SCRIPT FIREBASE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // IMPORTANTE: REEMPLAZA CON TUS DATOS DE FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyBa81qm91n-xaflSjlXKSmXEADzuK1K0cE",
+            authDomain: "random-de2ca.firebaseapp.com",
+            projectId: "random-de2ca",
+            storageBucket: "random-de2ca.firebasestorage.app",
+            messagingSenderId: "163559855222",
+            appId: "1:163559855222:web:22ca5f6ef1841f1fac3b57"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const misionesLista = [
+            { titulo: "Limpieza Extrema", desc: "Sube foto barriendo/trapeando." },
+            { titulo: "Cerebrito", desc: "Sube foto de tu tarea terminada." },
+            { titulo: "Orden Supremo", desc: "Sube foto de tu cama tendida." },
+            { titulo: "MasterChef", desc: "Sube foto lavando los platos." },
+            { titulo: "Amigo Fiel", desc: "Sube foto dándole agua/comida a la mascota." }
+        ];
+
+        const TOTAL_CARTAS = 42;
+        const jugadores = [
+            { id: 1, nombre: 'Messi', rareza: 'legendary' }, { id: 2, nombre: 'Ronaldo', rareza: 'legendary' }, { id: 3, nombre: 'Pele', rareza: 'legendary' }, { id: 4, nombre: 'Maradona', rareza: 'legendary' }, { id: 5, nombre: 'Zidane', rareza: 'legendary' }, { id: 6, nombre: 'Cruyff', rareza: 'legendary' },
+            { id: 7, nombre: 'Mbappé', rareza: 'epic' }, { id: 8, nombre: 'Neymar', rareza: 'epic' }, { id: 9, nombre: 'Modric', rareza: 'epic' }, { id: 10, nombre: 'De Bruyne', rareza: 'epic' }, { id: 11, nombre: 'Vinícius', rareza: 'epic' }, { id: 12, nombre: 'Haaland', rareza: 'epic' }, { id: 13, nombre: 'Bellingham', rareza: 'epic' }, { id: 14, nombre: 'Yamal', rareza: 'epic' }, { id: 15, nombre: 'Foden', rareza: 'epic' }, { id: 16, nombre: 'Wirtz', rareza: 'epic' }, { id: 17, nombre: 'Musiala', rareza: 'epic' }, { id: 18, nombre: 'Rodri', rareza: 'epic' },
+            { id: 19, nombre: 'Pedri', rareza: 'common' }, { id: 20, nombre: 'Gavi', rareza: 'common' }, { id: 21, nombre: 'Valverde', rareza: 'common' }, { id: 22, nombre: 'Alisson', rareza: 'common' }, { id: 23, nombre: 'Kane', rareza: 'common' }, { id: 24, nombre: 'Enzo', rareza: 'common' }, { id: 25, nombre: 'Araujo', rareza: 'common' }, { id: 26, nombre: 'Saka', rareza: 'common' }, { id: 27, nombre: 'Saliba', rareza: 'common' }, { id: 28, nombre: 'Rudiger', rareza: 'common' }, { id: 29, nombre: 'Griezmann', rareza: 'common' }, { id: 30, nombre: 'Leao', rareza: 'common' }, { id: 31, nombre: 'Odegaard', rareza: 'common' }, { id: 32, nombre: 'Dias', rareza: 'common' }, { id: 33, nombre: 'Courtois', rareza: 'common' }, { id: 34, nombre: 'Ter Stegen', rareza: 'common' }, { id: 35, nombre: 'Bruno F.', rareza: 'common' }, { id: 36, nombre: 'Barella', rareza: 'common' }, { id: 37, nombre: 'Davies', rareza: 'common' }, { id: 38, nombre: 'Hakimi', rareza: 'common' }, { id: 39, nombre: 'Martinez', rareza: 'common' }, { id: 40, nombre: 'Kimmich', rareza: 'common' }, { id: 41, nombre: 'Bastoni', rareza: 'common' }, { id: 42, nombre: 'Militao', rareza: 'common' }
+        ];
+
+        let datos = { monedas: 0, inventario: [], estadoMision: 'ninguna', fotoMision: null, ultimoReclamo: 0, totalCartas: 0, nombre: '', indiceMision: 0 };
+        let inventario = new Set();
+        let dbUnsubscribe = null;
+        let isMusicPlaying = false;
+        let albumInicializado = false;
+
+        // --- AUDIO ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        function initAudioContext() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+
+        window.toggleMusic = () => {
+            const bgMusic = document.getElementById('bgMusic'); const btn = document.getElementById('music-btn');
+            if (isMusicPlaying) { bgMusic.pause(); btn.style.opacity = "0.5"; isMusicPlaying = false; } 
+            else { bgMusic.volume = 0.2; bgMusic.play().catch(()=>{}); btn.style.opacity = "1"; isMusicPlaying = true; }
+        };
+
+        function playSound(type) {
+            initAudioContext();
+            const osc = audioCtx.createOscillator(); const gainNode = audioCtx.createGain();
+            osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+            
+            if (type === 'shake') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(80, audioCtx.currentTime); gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); } 
+            else if (type === 'flash') { osc.type = 'square'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.4); gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4); osc.start(); osc.stop(audioCtx.currentTime + 0.4); } 
+            else if (type === 'pop') { osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime); gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); } 
+            else if (type === 'legendary') { osc.type = 'triangle'; osc.frequency.setValueAtTime(440, audioCtx.currentTime); osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.2); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1); osc.start(); osc.stop(audioCtx.currentTime + 1); }
+        }
+
+        // --- AUTH & LIMPIEZA DE MEMORIA ---
+        window.registrarCuenta = () => {
+            initAudioContext();
+            const email = document.getElementById('auth-email').value; const pass = document.getElementById('auth-pass').value;
+            if(!email || pass.length < 6) return window.mostrarModal("Error", "Correo inválido o contraseña muy corta.");
+            createUserWithEmailAndPassword(auth, email, pass).catch(e => window.mostrarModal("Error", e.message));
+        };
+
+        window.iniciarSesion = () => {
+            initAudioContext();
+            const email = document.getElementById('auth-email').value; const pass = document.getElementById('auth-pass').value;
+            signInWithEmailAndPassword(auth, email, pass).catch(e => window.mostrarModal("Error", "Correo o contraseña incorrectos."));
+        };
+
+        // --- AQUÍ ESTÁ EL BORRADO DE MEMORIA QUE PEDISTE ---
+        window.cerrarSesionApp = () => { 
+            signOut(auth).then(() => { 
+                if(dbUnsubscribe) dbUnsubscribe(); 
+                
+                // Vaciar memorias locales
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Vaciar RAM
+                datos = { monedas: 0, inventario: [], estadoMision: 'ninguna', fotoMision: null, ultimoReclamo: 0, totalCartas: 0, nombre: '', indiceMision: 0 };
+                inventario.clear();
+                
+                // Recargar página para asegurar limpieza total
+                window.location.reload(); 
+            }); 
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            const authScreen = document.getElementById('auth-screen');
+            if (user) {
+                authScreen.style.opacity = '0';
+                setTimeout(() => { authScreen.style.display = 'none'; document.getElementById('app-container').style.display = 'block'; }, 300);
+                
+                dbUnsubscribe = onSnapshot(doc(db, "usuarios", user.uid), (docSnap) => {
+                    if (docSnap.exists()) {
+                        datos = docSnap.data(); inventario = new Set(datos.inventario || []);
+                        if(datos.indiceMision === undefined) datos.indiceMision = 0;
+                        if(!albumInicializado) inicializarAlbumGrid();
+                        actualizarDatosAlbum();
+                        actualizarUIMisiones(); actualizarUIAdmin();
+                    } else {
+                        datos.indiceMision = Math.floor(Math.random() * misionesLista.length);
+                        guardarDatosFirebase();
+                    }
+                });
+            } else {
+                authScreen.style.display = 'flex'; setTimeout(()=> authScreen.style.opacity = '1', 10);
+                document.getElementById('app-container').style.display = 'none';
+            }
+        });
+
+        function guardarDatosFirebase() {
+            if (!auth.currentUser) return;
+            datos.inventario = Array.from(inventario); datos.totalCartas = inventario.size; datos.nombre = auth.currentUser.email.split('@')[0];
+            setDoc(doc(db, "usuarios", auth.currentUser.uid), datos);
+        }
+
+        // --- RANKING ---
+        window.cargarRanking = async () => {
+            const container = document.getElementById('ranking-container');
+            container.innerHTML = '<p style="text-align:center; color: var(--text-muted);">Cargando...</p>';
+            try {
+                const q = query(collection(db, "usuarios"), orderBy("totalCartas", "desc"), limit(10));
+                const querySnapshot = await getDocs(q);
+                container.innerHTML = ''; let pos = 1;
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    let claseRango = pos === 1 ? 'rank-1' : pos === 2 ? 'rank-2' : pos === 3 ? 'rank-3' : '';
+                    let medalla = pos === 1 ? '1' : pos === 2 ? '2' : pos === 3 ? '3' : pos;
+                    container.innerHTML += `<div class="rank-item ${claseRango}"><div class="rank-info"><div class="rank-pos">${medalla}</div><div class="rank-name">${data.nombre.toUpperCase()}</div></div><div class="rank-score">${data.totalCartas || 0}</div></div>`;
+                    pos++;
+                });
+            } catch (error) { container.innerHTML = '<p style="text-align:center;">Error de red.</p>'; }
+        };
+
+        // --- MISIONES ---
+        function actualizarUIMisiones() {
+            const upZone = document.getElementById('mission-upload-zone'); const waitBtn = document.getElementById('mission-waiting-btn'); const claimBtn = document.getElementById('mission-claim-btn'); const preview = document.getElementById('brother-photo-preview');
+            const titleEl = document.getElementById('mission-title'); const descEl = document.getElementById('mission-desc');
+            upZone.style.display = 'none'; waitBtn.style.display = 'none'; claimBtn.style.display = 'none'; preview.style.display = 'none';
+            
+            let misionActual = misionesLista[datos.indiceMision % misionesLista.length];
+            titleEl.innerText = misionActual.titulo;
+
+            if (datos.estadoMision === 'ninguna') { descEl.innerText = misionActual.desc; upZone.style.display = 'block'; } 
+            else if (datos.estadoMision === 'pendiente') { descEl.innerText = "Revisión pendiente."; preview.src = datos.fotoMision; preview.style.display = 'block'; waitBtn.style.display = 'block'; } 
+            else if (datos.estadoMision === 'aceptada') { descEl.innerText = "¡Misión Superada!"; claimBtn.style.display = 'block'; } 
+            else if (datos.estadoMision === 'rechazada') { descEl.innerText = "Rechazada. Hazlo bien."; upZone.style.display = 'block'; }
+        }
+
+        window.cargarFotoMision = (event) => {
+            const archivo = event.target.files[0]; if (!archivo) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas'); const scaleSize = 500 / img.width;
+                    canvas.width = 500; canvas.height = img.height * scaleSize;
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                    datos.fotoMision = canvas.toDataURL('image/jpeg', 0.4); 
+                    datos.estadoMision = 'pendiente'; guardarDatosFirebase(); 
+                    window.mostrarModal("Enviada", "Avisa al administrador.");
+                }; img.src = e.target.result;
+            }; reader.readAsDataURL(archivo);
+        };
+
+        window.reclamarRecompensaMision = () => { 
+            datos.estadoMision = 'ninguna'; datos.fotoMision = null; datos.monedas += 50; 
+            let nueva = datos.indiceMision; while(nueva === datos.indiceMision) { nueva = Math.floor(Math.random() * misionesLista.length); }
+            datos.indiceMision = nueva; guardarDatosFirebase(); setTimeout(() => window.iniciarAnimacionSobre(true), 100); 
+        };
+
+        // --- ADMIN ---
+        window.abrirModalAdmin = () => {
+            document.getElementById('modal-title').innerText = "Acceso"; document.getElementById('modal-text').innerHTML = "Contraseña (admin):"; const input = document.getElementById('modal-password'); input.style.display = 'block'; input.value = '';
+            document.getElementById('modal-btn-ok').onclick = function() { if (input.value === 'admin') { window.cerrarModal(); window.cambiarVista('admin'); } else { document.getElementById('modal-text').innerHTML = "Contraseña incorrecta."; } }; window.mostrarVisibilidadModal();
+        };
+        
+        function actualizarUIAdmin() {
+            const preview = document.getElementById('admin-photo-preview'); const statusText = document.getElementById('admin-status-text'); const btnA = document.getElementById('btn-accept'); const btnR = document.getElementById('btn-reject');
+            if (datos.estadoMision === 'pendiente') { preview.src = datos.fotoMision; preview.style.display = 'block'; statusText.innerText = "¿Aprobar foto?"; btnA.style.display = 'block'; btnR.style.display = 'block'; } 
+            else { preview.style.display = 'none'; statusText.innerText = "Sin trabajo pendiente."; btnA.style.display = 'none'; btnR.style.display = 'none'; }
+        }
+        window.juzgarMision = (veredicto) => { datos.estadoMision = veredicto; if(veredicto === 'rechazada') datos.fotoMision = null; guardarDatosFirebase(); window.mostrarModal("Listo", veredicto === 'aceptada' ? "Aceptada." : "Rechazada."); };
+
+        // --- SISTEMA ÁLBUM ---
+        function actualizarUI() { 
+            document.getElementById('coin-display').innerText = datos.monedas || 0; 
+            document.getElementById('progress-text').innerText = `${inventario.size}/${TOTAL_CARTAS}`; 
+            if(auth.currentUser) {
+                const nombre = auth.currentUser.email.split('@')[0];
+                document.getElementById('profile-initial').innerText = nombre.charAt(0).toUpperCase();
+                document.getElementById('profile-name').innerText = nombre.toUpperCase();
+                document.getElementById('profile-email').innerText = auth.currentUser.email;
+                document.getElementById('stat-coins').innerText = `${datos.monedas || 0} 🪙`;
+                document.getElementById('stat-cards').innerText = `${inventario.size}/${TOTAL_CARTAS}`;
+            }
+        }
+
+        setInterval(() => {
+            if(!auth.currentUser) return;
+            const btn = document.getElementById('claim-timer-btn'); const cd = 10 * 60 * 1000; const pasado = Date.now() - (datos.ultimoReclamo || 0);
+            if (pasado >= cd) { btn.innerText = "🎁 Reclamar 150 🪙"; btn.className = "btn-ios btn-green"; btn.disabled = false; } 
+            else { const r = cd - pasado; const m = Math.floor(r / 60000); const s = Math.floor((r % 60000) / 1000); btn.innerText = `⏳ ${m}:${s<10?'0':''}${s}`; btn.className = "btn-ios btn-disabled"; btn.disabled = true; }
+        }, 1000);
+
+        window.reclamarTiempo = () => { initAudioContext(); datos.ultimoReclamo = Date.now(); datos.monedas = (datos.monedas || 0) + 150; guardarDatosFirebase(); };
+        window.comprarSobre = () => { initAudioContext(); if (datos.monedas < 150) return window.mostrarModal("Sin fondos", "No tienes 150 monedas."); datos.monedas -= 150; guardarDatosFirebase(); window.iniciarAnimacionSobre(false); };
+
+        // --- ANIMACIÓN DE CARTAS ARREGLADA ---
+        window.iniciarAnimacionSobre = (esMision = false) => {
+            initAudioContext();
+            let obtenidas = [];
+            for (let i = 0; i < 3; i++) {
+                const prob = Math.random() * 100; let r = prob > 95 ? 'legendary' : prob > 70 ? 'epic' : 'common';
+                const pos = jugadores.filter(j => j.rareza === r); obtenidas.push(pos[Math.floor(Math.random() * pos.length)]);
+            }
+
+            const animScreen = document.getElementById('pack-animation-screen'); const packObj = document.getElementById('anim-pack'); const flash = document.getElementById('flash-effect'); const container = document.getElementById('anim-cards-container');
+            container.innerHTML = ''; packObj.style.display = 'flex'; flash.classList.remove('do-flash'); animScreen.style.display = 'flex'; packObj.classList.add('shake-pack'); 
+            
+            setTimeout(() => {
+                packObj.classList.remove('shake-pack'); packObj.style.display = 'none'; flash.classList.add('do-flash'); playSound('flash');
+                
+                obtenidas.forEach((carta, idx) => {
+                    // CÓDIGO CORREGIDO PARA QUE LAS CARTAS SE VEAN PERFECTO
+                    let cardHTML = document.createElement('div'); 
+                    cardHTML.className = `anim-card rare-${carta.rareza}`;
+                    cardHTML.style.backgroundImage = `url('https://picsum.photos/seed/${carta.id + 100}/120/160')`;
+                    cardHTML.innerHTML = `<div class="anim-overlay"></div><h3>${carta.nombre}</h3><div class="rarity-label">${carta.rareza}</div>`;
+                    container.appendChild(cardHTML);
+                    
+                    setTimeout(() => { cardHTML.classList.add('show-card'); if(carta.rareza === 'legendary') playSound('legendary'); else playSound('pop'); }, 200 + (idx * 300));
+                });
+
+                setTimeout(() => { animScreen.style.display = 'none'; procesarCartas(obtenidas, esMision); }, 200 + (3 * 300) + 1200);
+            }, 800);
+        };
+
+        function procesarCartas(obtenidas, esMision) {
+            let msg = esMision ? "¡+50 🪙 extra!<br><br>" : "";
+            obtenidas.forEach(carta => {
+                if (inventario.has(carta.id)) { datos.monedas += 5; msg += `• ${carta.nombre} (Repetida +5)<br>`; } 
+                else { inventario.add(carta.id); window.renderizarUnicaCarta(carta); msg += `• <b>${carta.nombre}</b> (¡Nueva!)<br>`; }
+            });
+            guardarDatosFirebase(); window.mostrarModal("Resumen", msg);
+        }
+
+        // --- GRID ---
+        function inicializarAlbumGrid() {
+            const grid = document.getElementById('album-grid'); let html = "";
+            jugadores.forEach(j => { html += `<div class="sticker-slot" id="slot-${j.id}">${j.id}</div>`; }); 
+            grid.innerHTML = html; albumInicializado = true;
+        }
+
+        function actualizarDatosAlbum() {
+            inventario.forEach(id => { const carta = jugadores.find(j => j.id === id); if(carta) window.renderizarUnicaCarta(carta); });
+            actualizarUI();
+        }
+
+        window.renderizarUnicaCarta = (carta) => { 
+            const slot = document.getElementById(`slot-${carta.id}`); 
+            if(!slot || slot.classList.contains('filled')) return; 
+            slot.classList.add('filled');
+            slot.innerHTML = `<div class="sticker ${carta.rareza}" style="background-image: url('https://picsum.photos/seed/${carta.id + 100}/120/160');"><div class="sticker-overlay"></div><h3>${carta.nombre}</h3><div class="rarity-label">${carta.rareza}</div></div>`; 
+        }
+
+        // --- NAVEGACIÓN Y MODALES iOS ---
+        window.cambiarVista = (vista) => {
+            document.querySelectorAll('.view').forEach(v => { v.style.opacity = '0'; v.style.transform = 'scale(0.98)'; setTimeout(() => v.classList.remove('active'), 200); });
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+            setTimeout(() => {
+                const target = document.getElementById(`view-${vista}`); target.classList.add('active');
+                requestAnimationFrame(() => { target.style.opacity = '1'; target.style.transform = 'scale(1)'; });
+                const tab = document.getElementById(`tab-${vista}`); if(tab) tab.classList.add('active');
+            }, 200);
+        };
+
+        const modal = document.getElementById('modal');
+        window.mostrarModal = (titulo, texto) => { document.getElementById('modal-password').style.display = 'none'; document.getElementById('modal-title').innerText = titulo; document.getElementById('modal-text').innerHTML = texto; document.getElementById('modal-btn-ok').onclick = window.cerrarModal; window.mostrarVisibilidadModal(); };
+        window.mostrarVisibilidadModal = () => { modal.style.display = 'flex'; requestAnimationFrame(() => { modal.style.opacity = '1'; document.getElementById('modal-box').style.transform = 'scale(1)'; }); };
+        window.cerrarModal = () => { modal.style.opacity = '0'; document.getElementById('modal-box').style.transform = 'scale(1.1)'; setTimeout(() => modal.style.display = 'none', 200); };
+    </script>
+</body>
+</html>
+
